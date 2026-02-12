@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="RequestsService.Api/RequestsService.Api.csproj" />
+  <Project Path="RequestsService.Application/RequestsService.Application.csproj" />
+  <Project Path="RequestsService.Domain/RequestsService.Domain.csproj" />
+  <Project Path="RequestsService.Infrastructure/RequestsService.Infrastructure.csproj" />
+  <Project Path="RequestsService.Tests.Integration/RequestsService.Tests.Integration.csproj" />
+  <Project Path="RequestsService.Tests.Unit/RequestsService.Tests.Unit.csproj" />
+</Solution>
