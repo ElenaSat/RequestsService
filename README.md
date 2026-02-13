@@ -78,14 +78,9 @@ El nombre de la cola se configura en `appsettings.json`:
 ```
 
 ### 🐳 Docker Compose (Full Stack)
-Para ejecutar la solución completa (**API + Azurite**) en contenedores, asegurando que la API sea accesible en los puertos estándar de desarrollo (`5290` HTTP / `7258` HTTPS):
+Para ejecutar la solución completa (**API + Azurite**) en contenedores:
 
-1. **Confiar en el certificado de desarrollo** (Command Prompt / PowerShell):
-   ```bash
-   dotnet dev-certs https --trust
-   ```
-
-2. **Iniciar los servicios**:
+1. **Iniciar los servicios**:
    ```bash
    docker-compose up --build
    ```
@@ -93,8 +88,7 @@ Para ejecutar la solución completa (**API + Azurite**) en contenedores, asegura
 | Servicio      | URL Interna Docker    | URL Local Host                |
 |---------------|-----------------------|-------------------------------|
 | **API**       | `http://api:5290`     | `http://localhost:5290`       |
-|               | `https://api:7258`    | `https://localhost:7258`      |
-| **Swagger**   |                       | `https://localhost:7258/swagger` |
+| **Swagger**   |                       | `http://localhost:5290/swagger` |
 | **Azurite**   | `http://azurite:10001`| `127.0.0.1:10001`             |
 
 

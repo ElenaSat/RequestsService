@@ -1,18 +1,3 @@
-# ==============================================================================
-# Docker Compose para desarrollo local con Azurite (Emulador Azure Storage)
-# ==============================================================================
-# Uso: docker-compose up -d
-#
-# NOTA IMPORTANTE:
-# Si la API se ejecuta FUERA del contenedor (desde dotnet run o Visual Studio),
-# usa la cadena de conexión por defecto:
-#   "UseDevelopmentStorage=true"
-#
-# Si la API se ejecuta DENTRO de un contenedor Docker en la misma red,
-# debes apuntar a Azurite por su nombre de servicio:
-#   "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;QueueEndpoint=http://azurite:10001/devstoreaccount1"
-# ==============================================================================
-
 services:
   azurite:
     image: mcr.microsoft.com/azure-storage/azurite
@@ -23,25 +8,24 @@ services:
       - "10002:10002" # Table Storage
     volumes:
       - azurite-data:/data
-    command: "azurite --blobHost 0.0.0.0 --queueHost 0.0.0.0 --tableHost 0.0.0.0"
+    command: "azurite --silent --blobHost 0.0.0.0 --queueHost 0.0.0.0 --tableHost 0.0.0.0"
 
   api:
-    image: requestsservice-api
+    container_name: requestsservice-api
     build:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "5290:5290"
-      - "7258:7258"
+      - "5290:5290" # Acceso desde tu navegador: http://localhost:5290
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__AzureQueueStorage=DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;QueueEndpoint=http://azurite:10001/devstoreaccount1;BlobEndpoint=http://azurite:10000/devstoreaccount1;TableEndpoint=http://azurite:10002/devstoreaccount1;
+      # Forzamos solo HTTP para evitar errores de certificados en Docker
+      - ASPNETCORE_URLS=http://+:5290
+      # Conexión interna: se usa 'azurite' como host
+      - AzureQueueStorage__ConnectionString=DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;QueueEndpoint=http://azurite:10001/devstoreaccount1;
+      - AzureQueueStorage__QueueName=request-created-queue
     depends_on:
       - azurite
-    volumes:
-      - ${APPDATA}/Microsoft/UserSecrets:/home/app/.microsoft/usersecrets:ro
-      - ${USERPROFILE}/.aspnet/https:/home/app/.aspnet/https:ro
 
 volumes:
   azurite-data:
-    driver: local
