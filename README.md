@@ -109,7 +109,7 @@ A continuación se detallan los escenarios críticos de validación y manejo de 
 | :--- | :--- | :--- |
 | **Enviar información incompleta** | Se utiliza `FluentValidation` en la capa de Aplicación para asegurar que campos como `Name` y `Payload` no estén vacíos. Si fallan, se devuelve un `400 Bad Request` con los detalles. | ![Información Incompleta](Images/400Name.png) ![Información Incompleta](Images/400Payload.png) |
 | **Consultar identificadores inexistentes** | El Query Handler verifica si la entidad existe en el repositorio. Si no se encuentra, devuelve un resultado fallido que se traduce en un `404 Not Found`. | ![ID Inexistente](Images/404IDInexistente.png) |
-| **Realizar múltiples llamadas simultáneas** | El servicio utiliza el patrón asíncrono (`async/await`) de .NET 8 y `MediatR` para manejar múltiples solicitudes de forma concurrente y eficiente sin bloquear hilos. | ![Llamadas Simultáneas]() |
+| **Realizar múltiples llamadas simultáneas** | El servicio utiliza el patrón asíncrono (`async/await`) de .NET 8 y `MediatR` para manejar múltiples solicitudes de forma concurrente y eficiente sin bloquear hilos. | ![Llamadas Simultáneas](Images/TestMultiple.png) |
 
 ## 📋 Endpoints de la API (v1)
 - **POST** `/api/v1/solicitudes` - Crear una nueva solicitud.
