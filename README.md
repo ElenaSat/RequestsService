@@ -77,23 +77,26 @@ El nombre de la cola se configura en `appsettings.json`:
 }
 ```
 
-### 🐳 Docker Compose (Azurite)
-El archivo `docker-compose.yml` levanta el emulador Azurite con los tres servicios de storage:
+### 🐳 Docker Compose (Full Stack)
+Para ejecutar la solución completa (**API + Azurite**) en contenedores, asegurando que la API sea accesible en los puertos estándar de desarrollo (`5290` HTTP / `7258` HTTPS):
 
-```bash
-docker-compose up -d
-```
+1. **Confiar en el certificado de desarrollo** (Command Prompt / PowerShell):
+   ```bash
+   dotnet dev-certs https --trust
+   ```
 
-| Puerto | Servicio       |
-|--------|----------------|
-| 10000  | Blob Storage   |
-| 10001  | Queue Storage  |
-| 10002  | Table Storage  |
+2. **Iniciar los servicios**:
+   ```bash
+   docker-compose up --build
+   ```
 
-> **⚠️ Nota para entorno Docker:** Si ejecuta la API **dentro de un contenedor Docker** en la misma red que Azurite, la cadena de conexión debe apuntar al nombre del servicio en lugar de `localhost`:
-> ```
-> DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;QueueEndpoint=http://azurite:10001/devstoreaccount1
-> ```
+| Servicio      | URL Interna Docker    | URL Local Host                |
+|---------------|-----------------------|-------------------------------|
+| **API**       | `http://api:5290`     | `http://localhost:5290`       |
+|               | `https://api:7258`    | `https://localhost:7258`      |
+| **Swagger**   |                       | `https://localhost:7258/swagger` |
+| **Azurite**   | `http://azurite:10001`| `127.0.0.1:10001`             |
+
 
 ## 🧪 Ejecutando Pruebas
 Ejecute la suite completa de pruebas (Unit + Integration):
@@ -117,9 +120,4 @@ A continuación se detallan los escenarios críticos de validación y manejo de 
 - **GET** `/api/v1/solicitudes/{id}` - Obtener una solicitud por ID.
 - **GET** `/api/v1/solicitudes` - Obtener todas las solicitudes.
 
-## 🐳 Docker
-Construir y ejecutar con Docker:
-```bash
-docker build -t requestsservice .
-docker run -p 8080:8080 requestsservice
-```
+
