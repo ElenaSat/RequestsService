@@ -29,8 +29,8 @@ public class AzureQueueStoragePublisher : IRequestCreatedPublisher
 
     public async Task PublishAsync(Guid solicitudId, DateTime createdAt, CancellationToken ct = default)
     {
-        // Resiliencia: Asegura que la cola exista antes de cada publicación.
-        // Si Azurite se reinicia y pierde su estado en memoria, la cola se recrea automáticamente.
+        // Resilience: Ensures the queue exists before each post.
+        // If Azurite restarts and loses its state in memory, the queue is automatically recreated.
         await _queueClient.CreateIfNotExistsAsync(cancellationToken: ct);
 
         var message = new 

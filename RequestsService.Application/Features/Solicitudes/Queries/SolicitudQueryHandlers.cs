@@ -19,10 +19,9 @@ public class SolicitudQueryHandlers :
     public async Task<Result<SolicitudResponse>> Handle(ObtenerSolicitudQuery request, CancellationToken ct)
     {
         var entity = await _repository.GetByIdAsync(request.Id, ct);
-        if (entity == null)
-        {
-            // Return failure with a specific message that Controller can check, or simpler: just failure
-            return Result<SolicitudResponse>.Failure(new[] { "Solicitud not found" });
+        if (entity == null) {
+           
+            return Result<SolicitudResponse>.Failure(new[] { "Solicitud no encontrada" });
         }
 
         var response = new SolicitudResponse(
