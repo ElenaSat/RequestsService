@@ -42,6 +42,9 @@ Tras clonar el repositorio, ejecute los siguientes comandos para configurar la c
    ```bash
    dotnet user-secrets set "AzureQueueStorage:ConnectionString" "UseDevelopmentStorage=true" --project RequestsService.Api
    ```
+   ```bash
+   dotnet user-secrets set "AzureQueueStorage:ServiceVersion" "V2024_08_04" --project RequestsService.Api
+   ```
 
 > **Nota:** Los User Secrets se almacenan fuera del repositorio en su perfil de usuario (`%APPDATA%\Microsoft\UserSecrets\` en Windows). Nunca se suben al control de versiones.
 
@@ -97,6 +100,16 @@ Ejecute la suite completa de pruebas (Unit + Integration):
 ```bash
 dotnet test
 ```
+
+## 📋 Escenarios de Prueba y Validación
+
+A continuación se detallan los escenarios críticos de validación y manejo de errores implementados en el servicio:
+
+| Escenario | Descripción del Manejo | Evidencia (Foto) |
+| :--- | :--- | :--- |
+| **Enviar información incompleta** | Se utiliza `FluentValidation` en la capa de Aplicación para asegurar que campos como `Name` y `Payload` no estén vacíos. Si fallan, se devuelve un `400 Bad Request` con los detalles. | ![Información Incompleta]() |
+| **Consultar identificadores inexistentes** | El Query Handler verifica si la entidad existe en el repositorio. Si no se encuentra, devuelve un resultado fallido que se traduce en un `404 Not Found`. | ![ID Inexistente]() |
+| **Realizar múltiples llamadas simultáneas** | El servicio utiliza el patrón asíncrono (`async/await`) de .NET 8 y `MediatR` para manejar múltiples solicitudes de forma concurrente y eficiente sin bloquear hilos. | ![Llamadas Simultáneas]() |
 
 ## 📋 Endpoints de la API (v1)
 - **POST** `/api/v1/solicitudes` - Crear una nueva solicitud.

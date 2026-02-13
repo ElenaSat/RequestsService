@@ -1,48 +1,60 @@
-using System.Text;
-using System.Text.Json;
 using Azure.Storage.Queues;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using RequestsService.Application.Common.Interfaces;
+using System.Text;
+using System.Text.Json;
 
 namespace RequestsService.Infrastructure.Messaging;
 
 public class AzureQueueStoragePublisher : IRequestCreatedPublisher
 {
     private readonly QueueClient _queueClient;
+    private readonly ILogger<AzureQueueStoragePublisher> _logger;
 
-    public AzureQueueStoragePublisher(IConfiguration config)
+    public AzureQueueStoragePublisher(IConfiguration config, ILogger<AzureQueueStoragePublisher> logger)
     {
-        var connStr = config["AzureQueueStorage:ConnectionString"];
-        var queueName = config["AzureQueueStorage:QueueName"];
+        _logger = logger;
+        var connectionString = config["AzureQueueStorage:ConnectionString"] ?? throw new ArgumentNullException("AzureQueueStorage:ConnectionString");
+        var queueName = config["AzureQueueStorage:QueueName"] ?? "request-created-queue";
+        var versionString = config["AzureQueueStorage:ServiceVersion"];
 
-        if (string.IsNullOrEmpty(connStr))
-            throw new ArgumentNullException(nameof(connStr), "Azure Queue ConnectionString is missing.");
-        
-        if (string.IsNullOrEmpty(queueName))
-            throw new ArgumentNullException(nameof(queueName), "Azure Queue Name is missing.");
-        
-        _queueClient = new QueueClient(connStr, queueName, new QueueClientOptions
+        QueueClientOptions options;
+        if (!string.IsNullOrEmpty(versionString) && Enum.TryParse<QueueClientOptions.ServiceVersion>(versionString, out var version))
         {
-            MessageEncoding = QueueMessageEncoding.Base64 // Ensure Base64 encoding for compatibility
-        });
+            options = new QueueClientOptions(version);
+            _logger.LogInformation("QueueClient initialization with version: {Version}", versionString);
+        }
+        else
+        {
+            options = new QueueClientOptions(); 
+        }
+
+        _queueClient = new QueueClient(connectionString, queueName, options);
     }
 
-    public async Task PublishAsync(Guid solicitudId, DateTime createdAt, CancellationToken ct = default)
+    public async Task PublishAsync(Guid solicitudId, DateTime createdAt, CancellationToken ct)
     {
-        // Resilience: Ensures the queue exists before each post.
-        // If Azurite restarts and loses its state in memory, the queue is automatically recreated.
-        await _queueClient.CreateIfNotExistsAsync(cancellationToken: ct);
+        try
+        {
+            await _queueClient.CreateIfNotExistsAsync(cancellationToken: ct);
 
-        var message = new 
-        { 
-            EventType = "RequestCreated", 
-            SolicitudId = solicitudId, 
-            CreatedAt = createdAt, 
-            Timestamp = DateTime.UtcNow 
-        };
+            var message = new
+            {
+                Id = solicitudId,
+                FechaCreacion = createdAt,
+                TipoEvento = "RequestCreated"
+            };
 
-        var json = JsonSerializer.Serialize(message);
-        
-        await _queueClient.SendMessageAsync(BinaryData.FromString(json), cancellationToken: ct);
+            string messageBody = JsonSerializer.Serialize(message);
+            await _queueClient.SendMessageAsync(messageBody, ct);
+
+            _logger.LogInformation("RequestCreated event published for request {Id}", solicitudId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error publishing to Azure Queue Storage");
+            throw;
+        }
     }
 }
