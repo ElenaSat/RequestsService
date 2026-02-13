@@ -8,7 +8,7 @@ using RequestsService.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
-#region 1. CONFIGURACIÓN DE SERVICIOS (DI Container)
+#region 1. CONFIGURACION DE SERVICIOS (DI Container)
 
 // ===== SWAGGER + API VERSIONING =====
 builder.Services.AddEndpointsApiExplorer();
@@ -34,7 +34,7 @@ builder.Services.AddApiVersioning(options =>
 // ===== CLEAN ARCHITECTURE DI (Application + Infrastructure) =====
 builder.Services.AddMediatR(cfg =>
 {
-    // Ensamblado de Application, donde están los handlers
+    // Ensamblado de Application, donde estan los handlers
     cfg.RegisterServicesFromAssembly(
         typeof(RequestsService.Application.Features.Solicitudes.Create.CreateSolicitudHandler).Assembly
     );
@@ -79,7 +79,7 @@ builder.Services.AddControllers();
 
 var app = builder.Build();
 
-#region 2. PIPELINE ESTÁNDAR WEB API CONTROLLERS
+#region 2. PIPELINE ESTANDAR WEB API CONTROLLERS
 
 if (app.Environment.IsDevelopment())
 {
@@ -89,7 +89,7 @@ if (app.Environment.IsDevelopment())
 }
 else
 {
-    // Manejo de errores y seguridad extra en producción
+    // Manejo de errores y seguridad extra en produccion
     app.UseExceptionHandler("/error");
     app.UseHsts();
 }
@@ -97,7 +97,7 @@ else
 app.UseHttpsRedirection();
 app.UseRouting();
 
-// CORS según entorno
+// CORS segun entorno
 app.UseCors(app.Environment.IsDevelopment()
     ? "RequestsService.Cors.Development"
     : "RequestsService.Cors.Production");

@@ -27,28 +27,70 @@ La solución sigue la regla de dependencia estricta de Clean Architecture:
 
 ### Prerrequisitos
 - .NET 8 SDK
-- Docker (opcional)
+- Docker (para Azurite)
 - Emulador de Azure Storage (Azurite) o Cuenta de Azure
 
+### Configuración de Secretos Locales (User Secrets)
+Tras clonar el repositorio, ejecute los siguientes comandos para configurar la cadena de conexión de desarrollo de forma segura:
+
+1. **Inicializar User Secrets** (si no se ha hecho previamente):
+   ```bash
+   dotnet user-secrets init --project RequestsService.Api
+   ```
+
+2. **Configurar la cadena de conexión de Azurite**:
+   ```bash
+   dotnet user-secrets set "AzureQueueStorage:ConnectionString" "UseDevelopmentStorage=true" --project RequestsService.Api
+   ```
+
+> **Nota:** Los User Secrets se almacenan fuera del repositorio en su perfil de usuario (`%APPDATA%\Microsoft\UserSecrets\` en Windows). Nunca se suben al control de versiones.
+
 ### Ejecución Local
-1. **Restaurar Dependencias**:
+1. **Iniciar Azurite** (emulador de Azure Storage):
+   ```bash
+   docker-compose up -d
+   ```
+
+2. **Restaurar Dependencias**:
    ```bash
    dotnet restore
    ```
-2. **Ejecutar la API**:
+
+3. **Ejecutar la API**:
    ```bash
    dotnet run --project RequestsService.Api
    ```
-   Acceda a la UI de Swagger en: `https://localhost:7198/swagger` (o puerto configurado).
+   Acceda a la UI de Swagger en: `https://localhost:7258/swagger` (o puerto configurado).
 
 ### Configuración
-Configure `appsettings.json` o Variables de Entorno para Azure Queue Storage:
+La aplicación lee `AzureQueueStorage:ConnectionString` desde `IConfiguration`, que soporta las siguientes fuentes transparentemente:
+- **Desarrollo local:** User Secrets (`dotnet user-secrets set ...`)
+- **Producción:** Variables de entorno o Azure Key Vault
+
+El nombre de la cola se configura en `appsettings.json`:
 ```json
 "AzureQueueStorage": {
-  "ConnectionString": "UseDevelopmentStorage=true",
   "QueueName": "request-created-queue"
 }
 ```
+
+### 🐳 Docker Compose (Azurite)
+El archivo `docker-compose.yml` levanta el emulador Azurite con los tres servicios de storage:
+
+```bash
+docker-compose up -d
+```
+
+| Puerto | Servicio       |
+|--------|----------------|
+| 10000  | Blob Storage   |
+| 10001  | Queue Storage  |
+| 10002  | Table Storage  |
+
+> **⚠️ Nota para entorno Docker:** Si ejecuta la API **dentro de un contenedor Docker** en la misma red que Azurite, la cadena de conexión debe apuntar al nombre del servicio en lugar de `localhost`:
+> ```
+> DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;QueueEndpoint=http://azurite:10001/devstoreaccount1
+> ```
 
 ## 🧪 Ejecutando Pruebas
 Ejecute la suite completa de pruebas (Unit + Integration):

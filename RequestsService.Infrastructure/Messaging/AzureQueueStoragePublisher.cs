@@ -25,14 +25,14 @@ public class AzureQueueStoragePublisher : IRequestCreatedPublisher
         {
             MessageEncoding = QueueMessageEncoding.Base64 // Ensure Base64 encoding for compatibility
         });
-
-        // Ensure queue exists (best practice for startup or catch errors here, but for simplicity we assume it might exist or fail later)
-        // Usually creation is done separately or handled here.
-        _queueClient.CreateIfNotExists();
     }
 
     public async Task PublishAsync(Guid solicitudId, DateTime createdAt, CancellationToken ct = default)
     {
+        // Resiliencia: Asegura que la cola exista antes de cada publicación.
+        // Si Azurite se reinicia y pierde su estado en memoria, la cola se recrea automáticamente.
+        await _queueClient.CreateIfNotExistsAsync(cancellationToken: ct);
+
         var message = new 
         { 
             EventType = "RequestCreated", 
@@ -42,7 +42,6 @@ public class AzureQueueStoragePublisher : IRequestCreatedPublisher
         };
 
         var json = JsonSerializer.Serialize(message);
-        // QueueClient handles Base64 encoding if configured, or we can send BinaryData
         
         await _queueClient.SendMessageAsync(BinaryData.FromString(json), cancellationToken: ct);
     }
