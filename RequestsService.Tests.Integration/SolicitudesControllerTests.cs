@@ -68,4 +68,28 @@ public class SolicitudesControllerTests : IClassFixture<WebApplicationFactory<Pr
         Assert.NotNull(content);
         Assert.NotEmpty(content);
     }
+
+    [Fact]
+    public async Task PostSolicitud_MultipleConcurrentRequests_AllShouldSucceed()
+    {
+        // Arrange
+        int numberOfRequests = 10;
+        var tasks = new List<Task<HttpResponseMessage>>();
+
+        // Act
+        for (int i = 0; i < numberOfRequests; i++)
+        {
+            var request = new CrearSolicitudRequest($"Concurrent {i}", "Payload");
+            tasks.Add(_client.PostAsJsonAsync("/api/v1/solicitudes", request));
+        }
+
+        var responses = await Task.WhenAll(tasks);
+
+        // Assert
+        foreach (var response in responses)
+        {
+            Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        }
+    }
+
 }
