@@ -2,6 +2,7 @@ using FluentValidation;
 using MediatR;
 using RequestsService.Application.Common;
 using RequestsService.Application.Common.Interfaces;
+using RequestsService.Domain.Common;
 using RequestsService.Application.DTOs;
 using RequestsService.Domain.Entities;
 using RequestsService.Domain.Repositories;
@@ -30,13 +31,30 @@ public class CreateSolicitudHandler : IRequestHandler<CrearSolicitudCommand, Res
         var validationResult = await _validator.ValidateAsync(request, ct);
         if (!validationResult.IsValid)
         {
-            return Result<SolicitudResponse>.Failure(validationResult.Errors.Select(e => e.ErrorMessage).ToArray());
+            return validationResult.ToResult<SolicitudResponse>();
         }
 
-        var entity = Solicitud.Create(request.Name, request.Payload);
+        var solicitudResult = Solicitud.Create(request.Name, request.Payload);
+        if (solicitudResult.IsFailure)
+        {
+            return Result<SolicitudResponse>.Failure(solicitudResult.Errors);
+        }
 
-        await _repository.AddAsync(entity, ct);
-        await _publisher.PublishAsync(entity.Id, entity.CreatedAt, ct);
+        var entity = solicitudResult.Value!;
+
+        var repoResult = await _repository.AddAsync(entity, ct);
+        if (repoResult.IsFailure)
+        {
+            return Result<SolicitudResponse>.Failure(repoResult.Errors);
+        }
+
+        var publishResult = await _publisher.PublishAsync(entity.Id, entity.CreatedAt, ct);
+        if (publishResult.IsFailure)
+        {
+            // Note: In a more complex system, we might want to handle this differently (e.g., outbox pattern)
+            // but for now, we return the failure.
+            return Result<SolicitudResponse>.Failure(publishResult.Errors);
+        }
 
         var response = new SolicitudResponse(
             entity.Id,

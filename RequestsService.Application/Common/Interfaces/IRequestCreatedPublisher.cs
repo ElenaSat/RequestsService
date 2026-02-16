@@ -1,6 +1,8 @@
+using RequestsService.Domain.Common;
+
 namespace RequestsService.Application.Common.Interfaces;
 
 public interface IRequestCreatedPublisher
 {
-    Task PublishAsync(Guid solicitudId, DateTime createdAt, CancellationToken ct = default);
+    Task<Result> PublishAsync(Guid solicitudId, DateTime createdAt, CancellationToken ct = default);
 }

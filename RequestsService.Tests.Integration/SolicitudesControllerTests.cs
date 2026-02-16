@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using RequestsService.Application.Common.Interfaces;
 using RequestsService.Application.DTOs;
+using RequestsService.Domain.Common;
 using RequestsService.Domain.Enums;
 
 namespace RequestsService.Tests.Integration;
@@ -17,12 +18,16 @@ public class SolicitudesControllerTests : IClassFixture<WebApplicationFactory<Pr
 
     public SolicitudesControllerTests(WebApplicationFactory<Program> factory)
     {
+        var mockPublisher = new Mock<IRequestCreatedPublisher>();
+        mockPublisher.Setup(p => p.PublishAsync(It.IsAny<Guid>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result.Success());
+
         _factory = factory.WithWebHostBuilder(builder =>
         {
             builder.ConfigureServices(services =>
             {
                 services.RemoveAll<IRequestCreatedPublisher>();
-                services.AddSingleton<IRequestCreatedPublisher>(new Mock<IRequestCreatedPublisher>().Object);
+                services.AddSingleton<IRequestCreatedPublisher>(mockPublisher.Object);
             });
         });
         

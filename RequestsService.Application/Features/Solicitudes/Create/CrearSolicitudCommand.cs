@@ -1,6 +1,6 @@
 using MediatR;
-using RequestsService.Application.Common;
 using RequestsService.Application.DTOs;
+using RequestsService.Domain.Common;
 
 namespace RequestsService.Application.Features.Solicitudes.Create;
 

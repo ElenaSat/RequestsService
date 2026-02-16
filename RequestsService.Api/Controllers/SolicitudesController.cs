@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using RequestsService.Application.DTOs;
 using RequestsService.Application.Features.Solicitudes.Create;
 using RequestsService.Application.Features.Solicitudes.Queries;
+using RequestsService.Domain.Common;
 using Swashbuckle.AspNetCore.Annotations;
 
 namespace RequestsService.Api.Controllers;

@@ -4,6 +4,7 @@ using Moq;
 using RequestsService.Application.Common.Interfaces;
 using RequestsService.Application.DTOs;
 using RequestsService.Application.Features.Solicitudes.Create;
+using RequestsService.Domain.Common;
 using RequestsService.Domain.Entities;
 using RequestsService.Domain.Repositories;
 
@@ -22,6 +23,12 @@ public class CreateSolicitudHandlerTests
         _mockPublisher = new Mock<IRequestCreatedPublisher>();
         _mockValidator = new Mock<IValidator<CrearSolicitudRequest>>();
         _handler = new CreateSolicitudHandler(_mockRepo.Object, _mockPublisher.Object, _mockValidator.Object);
+
+        // Standard setups for success
+        _mockRepo.Setup(r => r.AddAsync(It.IsAny<Solicitud>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result.Success());
+        _mockPublisher.Setup(p => p.PublishAsync(It.IsAny<Guid>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result.Success());
     }
 
     [Fact]

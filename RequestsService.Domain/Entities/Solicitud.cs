@@ -1,3 +1,4 @@
+using RequestsService.Domain.Common;
 using RequestsService.Domain.Enums;
 
 namespace RequestsService.Domain.Entities;
@@ -18,15 +19,15 @@ public class Solicitud
         Payload = null!;
     }
 
-    public static Solicitud Create(string name, string payload)
+    public static Result<Solicitud> Create(string name, string payload)
     {
         if (string.IsNullOrWhiteSpace(name))
-            throw new ArgumentNullException(nameof(name), "Name cannot be null or empty.");
+            return Result<Solicitud>.Failure("Name cannot be null or empty.");
         
         if (string.IsNullOrWhiteSpace(payload))
-            throw new ArgumentNullException(nameof(payload), "Payload cannot be null or empty.");
+            return Result<Solicitud>.Failure("Payload cannot be null or empty.");
 
-        return new Solicitud
+        var solicitud = new Solicitud
         {
             Id = Guid.NewGuid(),
             Name = name,
@@ -34,6 +35,8 @@ public class Solicitud
             Status = SolicitudStatus.Pending,
             CreatedAt = DateTime.UtcNow
         };
+
+        return Result<Solicitud>.Success(solicitud);
     }
 
     public void MarkAsProcessed()

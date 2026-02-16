@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using RequestsService.Domain.Common;
 using RequestsService.Domain.Entities;
 using RequestsService.Domain.Repositories;
 
@@ -8,21 +9,24 @@ public class InMemorySolicitudRepository : ISolicitudRepository
 {
     private readonly ConcurrentDictionary<Guid, Solicitud> _solicitudes = new();
 
-    public Task AddAsync(Solicitud solicitud, CancellationToken ct = default)
+    public Task<Result> AddAsync(Solicitud solicitud, CancellationToken ct = default)
     {
         _solicitudes.TryAdd(solicitud.Id, solicitud);
-        return Task.CompletedTask;
+        return Task.FromResult(Result.Success());
     }
 
-    public Task<Solicitud?> GetByIdAsync(Guid id, CancellationToken ct = default)
+    public Task<Result<Solicitud>> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
-        _solicitudes.TryGetValue(id, out var solicitud);
-        return Task.FromResult(solicitud);
+        if (_solicitudes.TryGetValue(id, out var solicitud))
+        {
+            return Task.FromResult(Result<Solicitud>.Success(solicitud));
+        }
+        return Task.FromResult(Result<Solicitud>.Failure("Solicitud no encontrada"));
     }
 
-    public Task<List<Solicitud>> GetAllAsync(CancellationToken ct = default)
+    public Task<Result<List<Solicitud>>> GetAllAsync(CancellationToken ct = default)
     {
         var result = _solicitudes.Values.ToList();
-        return Task.FromResult(result);
+        return Task.FromResult(Result<List<Solicitud>>.Success(result));
     }
 }

@@ -2,6 +2,7 @@ using Azure.Storage.Queues;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using RequestsService.Application.Common.Interfaces;
+using RequestsService.Domain.Common;
 using System.Text.Json;
 
 namespace RequestsService.Infrastructure.Messaging;
@@ -30,12 +31,10 @@ public class AzureQueueStoragePublisher : IRequestCreatedPublisher
         }
     }
 
-    public async Task PublishAsync(Guid solicitudId, DateTime createdAt, CancellationToken ct)
+    public async Task<Result> PublishAsync(Guid solicitudId, DateTime createdAt, CancellationToken ct)
     {
         try
         {
-            // Note: In production, CreateIfNotExistsAsync might be called once at startup
-            // but for simplicity and robustness in this microservice, we check it here.
             await _queueClient.CreateIfNotExistsAsync(cancellationToken: ct);
 
             var eventData = new
@@ -49,11 +48,12 @@ public class AzureQueueStoragePublisher : IRequestCreatedPublisher
             await _queueClient.SendMessageAsync(messageBody, ct);
 
             _logger.LogInformation("RequestCreated event published for request {Id}", solicitudId);
+            return Result.Success();
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error publishing to Azure Queue Storage for request {Id}", solicitudId);
-            throw;
+            return Result.Failure($"Error publishing event: {ex.Message}");
         }
     }
 }

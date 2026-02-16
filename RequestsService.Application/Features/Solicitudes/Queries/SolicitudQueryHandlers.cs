@@ -1,5 +1,6 @@
 using MediatR;
 using RequestsService.Application.Common;
+using RequestsService.Domain.Common;
 using RequestsService.Application.DTOs;
 using RequestsService.Domain.Repositories;
 
@@ -18,12 +19,12 @@ public class SolicitudQueryHandlers :
 
     public async Task<Result<SolicitudResponse>> Handle(ObtenerSolicitudQuery request, CancellationToken ct)
     {
-        var entity = await _repository.GetByIdAsync(request.Id, ct);
-        if (entity == null) {
-           
-            return Result<SolicitudResponse>.Failure(new[] { "Solicitud no encontrada" });
+        var result = await _repository.GetByIdAsync(request.Id, ct);
+        if (result.IsFailure) {
+            return Result<SolicitudResponse>.Failure(result.Errors);
         }
 
+        var entity = result.Value!;
         var response = new SolicitudResponse(
             entity.Id, 
             entity.Name, 
@@ -37,9 +38,13 @@ public class SolicitudQueryHandlers :
 
     public async Task<Result<List<SolicitudResponse>>> Handle(ObtenerSolicitudesQuery request, CancellationToken ct)
     {
-        var entities = await _repository.GetAllAsync(ct);
+        var result = await _repository.GetAllAsync(ct);
+        if (result.IsFailure)
+        {
+            return Result<List<SolicitudResponse>>.Failure(result.Errors);
+        }
         
-        var response = entities.Select(e => new SolicitudResponse(
+        var response = result.Value!.Select(e => new SolicitudResponse(
             e.Id, 
             e.Name, 
             e.Payload, 
