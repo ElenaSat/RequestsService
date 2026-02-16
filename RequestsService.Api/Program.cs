@@ -43,6 +43,11 @@ builder.Services.AddMediatR(cfg =>
 // InMemory repo con Singleton 
 builder.Services.AddSingleton<ISolicitudRepository, InMemorySolicitudRepository>();
 
+// Configuration and Validation for Azure Queue
+builder.Services.Configure<AzureQueueOptions>(
+    builder.Configuration.GetSection(AzureQueueOptions.SectionName));
+builder.Services.AddSingleton<IValidator<AzureQueueOptions>, AzureQueueOptionsValidator>();
+
 // Publisher de eventos a Azure Queue Storage
 builder.Services.AddScoped<IRequestCreatedPublisher, AzureQueueStoragePublisher>();
 

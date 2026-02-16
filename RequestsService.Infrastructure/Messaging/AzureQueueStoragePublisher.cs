@@ -1,8 +1,7 @@
 using Azure.Storage.Queues;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using RequestsService.Application.Common.Interfaces;
-using System.Text;
 using System.Text.Json;
 
 namespace RequestsService.Infrastructure.Messaging;
@@ -12,48 +11,48 @@ public class AzureQueueStoragePublisher : IRequestCreatedPublisher
     private readonly QueueClient _queueClient;
     private readonly ILogger<AzureQueueStoragePublisher> _logger;
 
-    public AzureQueueStoragePublisher(IConfiguration config, ILogger<AzureQueueStoragePublisher> logger)
+    public AzureQueueStoragePublisher(
+        IOptions<AzureQueueOptions> options, 
+        ILogger<AzureQueueStoragePublisher> logger)
     {
         _logger = logger;
-        var connectionString = config["AzureQueueStorage:ConnectionString"] ?? throw new ArgumentNullException("AzureQueueStorage:ConnectionString");
-        var queueName = config["AzureQueueStorage:QueueName"] ?? "request-created-queue";
-        var versionString = config["AzureQueueStorage:ServiceVersion"];
+        var settings = options.Value;
 
-        QueueClientOptions options;
-        if (!string.IsNullOrEmpty(versionString) && Enum.TryParse<QueueClientOptions.ServiceVersion>(versionString, out var version))
-        {
-            options = new QueueClientOptions(version);
-            _logger.LogInformation("QueueClient initialization with version: {Version}", versionString);
-        }
-        else
-        {
-            options = new QueueClientOptions(); 
-        }
+        var clientOptions = settings.ServiceVersion.HasValue 
+            ? new QueueClientOptions(settings.ServiceVersion.Value) 
+            : new QueueClientOptions();
 
-        _queueClient = new QueueClient(connectionString, queueName, options);
+        _queueClient = new QueueClient(settings.ConnectionString, settings.QueueName, clientOptions);
+        
+        if (settings.ServiceVersion.HasValue)
+        {
+            _logger.LogInformation("QueueClient initialization with version: {Version}", settings.ServiceVersion.Value);
+        }
     }
 
     public async Task PublishAsync(Guid solicitudId, DateTime createdAt, CancellationToken ct)
     {
         try
         {
+            // Note: In production, CreateIfNotExistsAsync might be called once at startup
+            // but for simplicity and robustness in this microservice, we check it here.
             await _queueClient.CreateIfNotExistsAsync(cancellationToken: ct);
 
-            var message = new
+            var eventData = new
             {
                 Id = solicitudId,
                 FechaCreacion = createdAt,
                 TipoEvento = "RequestCreated"
             };
 
-            string messageBody = JsonSerializer.Serialize(message);
+            string messageBody = JsonSerializer.Serialize(eventData);
             await _queueClient.SendMessageAsync(messageBody, ct);
 
             _logger.LogInformation("RequestCreated event published for request {Id}", solicitudId);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error publishing to Azure Queue Storage");
+            _logger.LogError(ex, "Error publishing to Azure Queue Storage for request {Id}", solicitudId);
             throw;
         }
     }
